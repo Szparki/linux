@@ -1,0 +1,92 @@
+#!/bin/bash
+#Created by: Laszlo Danielisz <lacibsd@gmail.com>, if you update this script let him know
+#
+
+_usage() {
+
+cat <<EOF
+Usage: $0 [p1p1 p1p2]
+
+Warning, this script was crafted for CentOS/RHEL!
+
+The first interface is what has currently the IP
+Please rovide two unique interfaces
+The script only handles IPv$, IPv6 must be set manualy
+EOF
+
+}
+
+_makebond() {
+
+### backing up current interface config
+/bin/cp /etc/sysconfig/network-scripts/ifcfg-$INTERFACE1 /root/
+/bin/cp /etc/sysconfig/network-scripts/ifcfg-$INTERFACE2 /root/
+
+IP=`ip address show dev $INTERFACE1 | grep inet | awk '{print $2}' | cut -f1 -d "/" | sed -n '/\([0-9]\{1,3\}\.\)\{3\}[0-9]\{1,3\}/p'`
+MASK=`ip address show dev $INTERFACE1 | grep inet | awk '{print $2}' | cut -d "/" -f 2 | head -1`
+GW=`ip route show | grep default | awk '{print $3}'`
+UUID1=`/bin/uuidgen $INTERFACE1`
+UUID2=`/bin/uuidgen $INTERFACE2`
+
+cat > /etc/sysconfig/network-scripts/ifcfg-bond0 << EOL
+DEVICE=bond0
+BONDING_OPTS="miimon=100 mode=active-backup primary=$INTERFACE1"
+BONDING_MASTER=yes
+BOOTPROTO=none
+IPADDR=$IP
+PREFIX=$MASK
+GATEWAY=$GW
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+NAME=bond0
+ONBOOT=yes
+DOMAIN=vrt.sourcefire.com
+IPV6INIT="NO"
+IPV6_PRIVACY="NO"
+IPV6_AUTOCONF="NO"
+IPV6_FAILURE_FATAL="NO"
+EOL
+
+cat > /etc/sysconfig/network-scripts/ifcfg-$INTERFACE1 << EOL
+TYPE=Ethernet
+NAME=$INTERFACE1
+UUID=$UUID1
+DEVICE=$INTERFACE1
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+IPV6INIT="NO"
+IPV6_AUTOCONF="NO"
+IPV6_DEFROUTE="NO"
+IPV6_FAILURE_FATAL="NO"
+IPV6_ADDR_GEN_MODE="NO
+EOL
+
+cat > /etc/sysconfig/network-scripts/ifcfg-$INTERFACE2 << EOL
+TYPE=Ethernet
+NAME=$INTERFACE2
+UUID=$UUID2
+DEVICE=$INTERFACE2
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+IPV6INIT="NO"
+IPV6_AUTOCONF="NO"
+IPV6_DEFROUTE="NO"
+IPV6_FAILURE_FATAL="NO"
+IPV6_ADDR_GEN_MODE="NO
+EOL
+
+}
+
+case $2 in
+
+    *[0-9])
+	    INTERFACE1=$1
+	    INTERFACE2=$2
+            _makebond
+            ;;
+    *)
+            _usage
+            ;;
+esac
