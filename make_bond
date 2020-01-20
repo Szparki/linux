@@ -1,5 +1,5 @@
 #!/bin/bash
-#Created by: Laszlo Danielisz: https://github.com/danielisz/linux 
+#Created by: Laszlo Danielisz: https://github.com/danielisz/linux
 #
 
 _usage() {
