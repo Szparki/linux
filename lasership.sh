@@ -1,6 +1,7 @@
 #!/bin/bash
 ## 2020-04-25
 ## Small script to send notfiication over pushover about packages sent with lasership.com
+## This is just a beta version
 
 WGET=`which wget`
 CURL=`which curl`
@@ -37,7 +38,7 @@ while true; do
     if [ "$STATUS" = "Delivered" ]; then
         exit 0
     fi
-    sleep 10;
+    sleep 300;
     COUNT=`$WGET -cq www.lasership.com/track/$LASER_URL/JSON -O - | jq '.Events|length'`
     unset MESSAGE
 
